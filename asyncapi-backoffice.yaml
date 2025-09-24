@@ -1,0 +1,606 @@
+asyncapi: 3.0.0
+info:
+  title: BackOffice Event Bus API
+  version: 1.0.2
+  description: Documentación AsyncAPI 3.0 para módulo BackOffice.
+defaultContentType: application/json
+servers:
+  rabbitmq-local:
+    host: localhost:5672
+    protocol: amqp
+    description: Servidor RabbitMQ local
+    security:
+      - $ref: '#/components/securitySchemes/userPassword'
+    tags:
+      - name: env:local
+        description: RabbitMQ en entorno local
+      - name: kind:internal
+        description: Broker usado para comunicación interna
+channels:
+  userCreated:
+    address: user.created
+    messages:
+      userCreatedMessage:
+        $ref: '#/components/messages/UserCreated'
+    description: Evento emitido cuando se crea un usuario en BackOffice.
+  userUpdated:
+    address: user.updated
+    messages:
+      userUpdatedMessage:
+        $ref: '#/components/messages/UserUpdated'
+    description: Evento emitido cuando un usuario es actualizado.
+  userDeleted:
+    address: user.deleted
+    description: Evento emitido cuando un usuario es eliminado en BackOffice.
+    messages:
+      userDeletedMessage:
+        $ref: '#/components/messages/UserDeleted'
+  courseTeacherProposalCreated:
+    address: course.teacher.proposal.created
+    description: >-
+      Evento emitido por módulo de Docentes cuando se crea una propuesta de
+      docente.
+    messages:
+      courseTeacherProposalCreatedMessage:
+        $ref: '#/components/messages/CourseTeacherProposalCreated'
+  courseTeacherAssigned:
+    address: course.teacher.assigned
+    description: Asignación de docente a un curso
+    messages:
+      courseTeacherAssignedMessage:
+        $ref: '#/components/messages/CourseTeacherAssigned'
+  courseTeacherUnassigned:
+    address: course.teacher.unassigned
+    description: Remoción de docente de un curso
+    messages:
+      courseTeacherUnassignedMessage:
+        $ref: '#/components/messages/CourseTeacherUnassigned'
+  examSchedulePublished:
+    address: exam.schedule.published
+    description: Publicación del cronograma oficial de evaluaciones por curso
+    messages:
+      examSchedulePublishedMessage:
+        $ref: '#/components/messages/ExamSchedulePublished'
+  calendarClassesPublished:
+    address: calendar.classes.published
+    description: Publicación del calendario oficial de clases por curso
+    messages:
+      calendarClassesPublishedMessage:
+        $ref: '#/components/messages/CalendarClassesPublished'
+operations:
+  publishUserCreated:
+    action: send
+    channel:
+      $ref: '#/channels/userCreated'
+    summary: Publicación de evento de creación de usuario
+    messages:
+      - $ref: '#/channels/userCreated/messages/userCreatedMessage'
+  publishUserUpdated:
+    action: send
+    channel:
+      $ref: '#/channels/userUpdated'
+    summary: Publicación de evento de actualización de usuario
+    messages:
+      - $ref: '#/channels/userUpdated/messages/userUpdatedMessage'
+  publishUserDeleted:
+    action: send
+    channel:
+      $ref: '#/channels/userDeleted'
+    summary: Publicación de evento de eliminación de usuario (requerido por Core)
+    messages:
+      - $ref: '#/channels/userDeleted/messages/userDeletedMessage'
+  receiveCourseTeacherProposalCreated:
+    action: receive
+    channel:
+      $ref: '#/channels/courseTeacherProposalCreated'
+    summary: Suscripción al evento de propuesta docente creada
+    messages:
+      - $ref: >-
+          #/channels/courseTeacherProposalCreated/messages/courseTeacherProposalCreatedMessage
+  publishCourseTeacherAssigned:
+    action: send
+    channel:
+      $ref: '#/channels/courseTeacherAssigned'
+    summary: Publicación de asignación de docente a curso
+    messages:
+      - $ref: '#/channels/courseTeacherAssigned/messages/courseTeacherAssignedMessage'
+  publishCourseTeacherUnassigned:
+    action: send
+    channel:
+      $ref: '#/channels/courseTeacherUnassigned'
+    summary: Publicación de desasignación de docente en curso
+    messages:
+      - $ref: >-
+          #/channels/courseTeacherUnassigned/messages/courseTeacherUnassignedMessage
+  publishExamSchedulePublished:
+    action: send
+    channel:
+      $ref: '#/channels/examSchedulePublished'
+    summary: Publicación de evaluaciones oficiales por curso
+    messages:
+      - $ref: '#/channels/examSchedulePublished/messages/examSchedulePublishedMessage'
+  publishCalendarClassesPublished:
+    action: send
+    channel:
+      $ref: '#/channels/calendarClassesPublished'
+    summary: Publicación de calendario de clases por curso
+    messages:
+      - $ref: >-
+          #/channels/calendarClassesPublished/messages/calendarClassesPublishedMessage
+components:
+  messages:
+    UserCreated:
+      name: UserCreated
+      title: user.created
+      summary: Evento de creación de usuario
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/UserCreatedPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            userId: 7d9c2a64-8b0c-4a7c-9c61-9a4a3d9b2e11
+            email: ana.gomez@campus.edu
+            name: Ana Gómez
+            role:
+              - STUDENT
+            created_at: '2025-09-22T16:00:00Z'
+    UserUpdated:
+      name: UserUpdated
+      title: user.updated
+      summary: Evento de actualización de usuario
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/UserUpdatedPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            userId: 7d9c2a64-8b0c-4a7c-9c61-9a4a3d9b2e11
+            changedFields:
+              - email
+            after:
+              userId: 7d9c2a64-8b0c-4a7c-9c61-9a4a3d9b2e11
+              email: ana.gomez+1@campus.edu
+              name: Ana Gómez
+              role:
+                - STUDENT
+              created_at: '2025-09-22T16:00:00Z'
+    UserDeleted:
+      name: UserDeleted
+      title: user.deleted
+      summary: Evento de eliminación de usuario (contrato solicitado por Core)
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/UserDeletedPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            userId: 7d9c2a64-8b0c-4a7c-9c61-9a4a3d9b2e11
+            deletedAt: '2025-09-20T10:00:00Z'
+    CourseTeacherProposalCreated:
+      name: CourseTeacherProposalCreated
+      title: course.teacher.proposal.created
+      summary: Evento de creación de propuesta docente (emitido por módulo de Docentes)
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/CourseTeacherProposalCreatedPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            proposalId: TP-2025-0001
+            courseId: CUR-ALG-101
+            teacherId: TEA-00042
+            role: TITULAR
+            subjectId: PROG321
+            subjectName: Programacion III
+            submittedAt: '2025-09-25T14:30:00Z'
+            status: PENDING
+    CourseTeacherAssigned:
+      name: CourseTeacherAssigned
+      title: course.teacher.assigned
+      summary: Asignación de docente a curso
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/CourseTeacherAssignmentPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            courseId: '123'
+            uuid: '111'
+            role: TITULAR
+            subjectId: PROG321
+            subjectName: Programacion III
+            location: Monserrat
+            classroomId: '312'
+            term: 2025-Q2
+            time:
+              dia: 1
+              shift: Noche
+    CourseTeacherUnassigned:
+      name: CourseTeacherUnassigned
+      title: course.teacher.unassigned
+      summary: Desasignación de docente de curso
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/CourseTeacherAssignmentPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            courseId: '123'
+            uuid: '111'
+            role: TITULAR
+            subjectId: PROG321
+            subjectName: Programacion III
+            location: Monserrat
+            classroomId: '312'
+            term: 2025-Q2
+            time:
+              dia: 1
+              shift: Noche
+    ExamSchedulePublished:
+      name: ExamSchedulePublished
+      title: exam.schedule.published
+      summary: Publicación de evaluaciones oficiales de un curso
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/ExamSchedulePublishedPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            scheduleId: SCH-EX-2025-0001
+            courseId: CUR-ALG-101
+            term: 2025-Q2
+            publishedAt: '2025-09-22T12:00:00Z'
+            evaluations:
+              - examId: EX-ALG1-001
+                type: PARTIAL
+                startsAt: '2025-10-05T14:00:00Z'
+                endsAt: '2025-10-05T16:00:00Z'
+                modality: ONSITE
+                location:
+                  building: A
+                  room: '201'
+              - examId: EX-ALG1-002
+                type: FINAL
+                startsAt: '2025-11-20T09:00:00Z'
+                endsAt: '2025-11-20T12:00:00Z'
+                modality: REMOTE
+                location: null
+    CalendarClassesPublished:
+      name: CalendarClassesPublished
+      title: calendar.classes.published
+      summary: Publicación del calendario oficial de clases por curso
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/commonHeaders'
+      payload:
+        $ref: '#/components/schemas/CalendarClassesPublishedPayload'
+      examples:
+        - name: ejemplo
+          payload:
+            calendarId: CAL-2025-0009
+            courseId: CUR-ALG-101
+            term: 2025-Q2
+            publishedAt: '2025-09-22T10:00:00Z'
+            calendar:
+              - day: 11
+                month: 9
+                start-time: 18
+                end-time: 20
+              - day: 18
+                month: 9
+                start-time: 18
+                end-time: 20
+  schemas:
+    UserBase:
+      type: object
+      required:
+        - userId
+        - email
+        - created_at
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+    UserCreatedPayload:
+      allOf:
+        - $ref: '#/components/schemas/UserBase'
+        - type: object
+          properties:
+            metadata:
+              type: object
+              additionalProperties: true
+    UserUpdatedPayload:
+      type: object
+      required:
+        - userId
+        - changedFields
+      properties:
+        userId:
+          type: string
+        changedFields:
+          type: array
+          items:
+            type: string
+        after:
+          $ref: '#/components/schemas/UserBase'
+    UserDeletedPayload:
+      type: object
+      required:
+        - userId
+        - deletedAt
+      properties:
+        userId:
+          type: string
+          description: UUID del usuario.
+          example: 7d9c2a64-8b0c-4a7c-9c61-9a4a3d9b2e11
+        deletedAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de eliminación.
+          example: '2025-09-20T10:00:00Z'
+    CourseTeacherProposalCreatedPayload:
+      type: object
+      required:
+        - proposalId
+        - courseId
+        - teacherId
+        - role
+        - subjectId
+        - subjectName
+        - submittedAt
+        - status
+      properties:
+        proposalId:
+          type: string
+          example: TP-2025-0001
+        courseId:
+          type: string
+          example: CUR-ALG-101
+        teacherId:
+          type: string
+          example: TEA-00042
+        role:
+          type: string
+          example: TITULAR
+        subjectId:
+          type: string
+          example: PROG321
+        subjectName:
+          type: string
+          example: Programacion III
+        submittedAt:
+          type: string
+          format: date-time
+          example: '2025-09-25T14:30:00Z'
+        status:
+          type: string
+          enum:
+            - PENDING
+            - APPROVED
+            - REJECTED
+          example: PENDING
+    CourseTeacherAssignmentPayload:
+      type: object
+      required:
+        - courseId
+        - uuid
+        - role
+        - subjectId
+        - subjectName
+        - location
+        - classroomId
+        - term
+        - time
+      properties:
+        courseId:
+          type: string
+          example: '123'
+        uuid:
+          type: string
+          description: UUID del docente o relación curso-docente.
+          example: '111'
+        role:
+          type: string
+          example: TITULAR
+        subjectId:
+          type: string
+          example: PROG321
+        subjectName:
+          type: string
+          example: Programacion III
+        location:
+          type: string
+          example: Monserrat
+        classroomId:
+          type: string
+          example: '312'
+        term:
+          type: string
+          example: 2025-Q2
+        time:
+          type: object
+          required:
+            - dia
+            - shift
+          properties:
+            dia:
+              type: integer
+              minimum: 1
+              maximum: 7
+              description: Día de la semana (1=Lunes ... 7=Domingo)
+            shift:
+              type: string
+              example: Noche
+    ExamSchedulePublishedPayload:
+      type: object
+      required:
+        - scheduleId
+        - courseId
+        - evaluations
+        - publishedAt
+      properties:
+        scheduleId:
+          type: string
+          description: Identificador del schedule de exámenes.
+          example: SCH-EX-2025-0001
+        courseId:
+          type: string
+          description: Identificador del curso.
+          example: CUR-ALG-101
+        term:
+          type: string
+          description: Período académico (ej. 2025-Q2).
+          example: 2025-Q2
+        publishedAt:
+          type: string
+          format: date-time
+          example: '2025-09-22T12:00:00Z'
+        evaluations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - examId
+              - type
+              - startsAt
+              - endsAt
+            properties:
+              examId:
+                type: string
+                example: EX-ALG1-002
+              type:
+                type: string
+                enum:
+                  - QUIZ
+                  - PARTIAL
+                  - FINAL
+                  - RECUP
+                example: FINAL
+              startsAt:
+                type: string
+                format: date-time
+                example: '2025-11-20T09:00:00Z'
+              endsAt:
+                type: string
+                format: date-time
+                example: '2025-11-20T12:00:00Z'
+              modality:
+                type: string
+                enum:
+                  - ONSITE
+                  - REMOTE
+                  - HYBRID
+                example: REMOTE
+              location:
+                type:
+                  - object
+                  - 'null'
+                properties:
+                  building:
+                    type: string
+                  room:
+                    type: string
+    CalendarClassesPublishedPayload:
+      type: object
+      required:
+        - calendarId
+        - courseId
+        - calendar
+        - publishedAt
+      properties:
+        calendarId:
+          type: string
+          description: Identificador del calendario de clases.
+          example: CAL-2025-0009
+        courseId:
+          type: string
+          description: Identificador del curso.
+          example: CUR-ALG-101
+        term:
+          type: string
+          description: Período académico (ej. 2025-Q2).
+          example: 2025-Q2
+        publishedAt:
+          type: string
+          format: date-time
+          example: '2025-09-22T10:00:00Z'
+        calendar:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - day
+              - month
+              - start-time
+              - end-time
+            properties:
+              day:
+                type: integer
+                minimum: 1
+                maximum: 31
+                example: 11
+              month:
+                type: integer
+                minimum: 1
+                maximum: 12
+                example: 9
+              start-time:
+                type: number
+                description: Inicio en horas (ej. 18.5 equivale a 18:30)
+                example: 18
+              end-time:
+                type: number
+                description: Fin en horas (ej. 20.0 equivale a 20:00)
+                example: 20
+  securitySchemes:
+    userPassword:
+      type: userPassword
+      description: Usuario y contraseña para autenticación en RabbitMQ
+  messageTraits:
+    commonHeaders:
+      headers:
+        type: object
+        properties:
+          eventId:
+            type: string
+            description: UUID único del evento
+          eventType:
+            type: string
+            description: Tipo de evento (ej. user.created)
+          occurredAt:
+            type: string
+            format: date-time
+            description: Fecha y hora en que ocurrió el evento
+          producer:
+            type: string
+            description: Servicio que produjo el evento
+          schemaVersion:
+            type: integer
